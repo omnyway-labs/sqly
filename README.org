@@ -49,7 +49,7 @@ generates:
          "context.event_type" as type,
          count(1) as count
   from zapbuy.cues
-  where ("context.event_type" is not null)
+  where "context.event_type" is not null
   group by "context.event_type",date_trunc('hour',datetime)
   order by hour desc
 #+END_SRC

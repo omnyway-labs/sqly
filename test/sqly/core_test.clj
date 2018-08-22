@@ -59,7 +59,7 @@
            ",\"context.event_type\" as type"
            ",count(1) as count"
            " FROM zapbuy.cues"
-           " WHERE (\"context.event_type\" IS NOT NULL)"
+           " WHERE \"context.event_type\" IS NOT NULL"
            " GROUP BY \"context.event_type\",month(datetime)"
            " ORDER BY month DESC"])
          (sql/sql
@@ -80,7 +80,7 @@
            ",\"context.event_type\" as type"
            ",count(1) as count"
            " FROM zapbuy.cues"
-           " WHERE (\"context.event_type\" IS NOT NULL)"
+           " WHERE \"context.event_type\" IS NOT NULL"
            " GROUP BY \"context.event_type\",month(datetime),day(datetime)"
            " ORDER BY month DESC,day DESC"])
          (sql/sql
@@ -103,7 +103,7 @@
            ",\"context.event_type\" as type"
            ",count(1) as count"
            " FROM zapbuy.cues"
-           " WHERE (\"context.event_type\" IS NOT NULL)"
+           " WHERE \"context.event_type\" IS NOT NULL"
            " GROUP BY \"context.event_type\",date_trunc('hour',datetime)"
            " ORDER BY hour DESC"])
          (sql/sql
@@ -115,3 +115,14 @@
            :group-by '[:context.event-type
                        (date-trunc "hour" :datetime)]
            :order-by [[:hour :desc]]}))))
+
+(deftest where-test
+  (is (= (canon
+          ["select *"
+           " from zapbuy.cues"
+           " where (event_type is not null or error is not null)"])
+         (sql/sql
+          {:select :*
+           :from :zapbuy.cues
+           :where '(or {:event-type :not-nil}
+                       {:error :not-nil})}))))

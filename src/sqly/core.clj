@@ -32,11 +32,12 @@
   ([v]
    (emit-infix-op v {}))
   ([[op & args] opts]
-   (str "("
-        (->> args
-             (map #(as-ident % opts))
-             (str/join (str " " op " ")))
-        ")")))
+   (let [s (->> args
+                (map #(as-ident % opts))
+                (str/join (str " " op " ")))]
+     (if (< 1 (count args))
+       (str "(" s ")")
+       s))))
 
 (defn emit-function
   ([v]
@@ -120,10 +121,11 @@
   (emit-clause clause content {:separator " "}))
 
 (defn emit-order-by-clause [clause content]
-  (->> content
-       (map #(emit-idents % {:separator " "}))
-       (str/join ",")
-       (str clause " ")))
+  (when content
+    (->> content
+         (map #(emit-idents % {:separator " "}))
+         (str/join ",")
+         (str clause " "))))
 
 (defn emit-from-clause [clause content]
   (emit-clause clause content {:disable-quoting? true}))
@@ -135,7 +137,8 @@
    (emit-function (cons 'and (into [] m)) opts)))
 
 (defn emit-where-clause [clause content]
-  (emit-clause clause content
+  (emit-clause clause
+               [content]
                {:separator " "
                 :emitters {:map emit-where-map}}))
 
