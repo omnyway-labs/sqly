@@ -46,7 +46,8 @@
          (str (as-ident fname) "(" args-str ")"))))))
 
 (def ^:dynamic *remapped-idents*
-  {:is-not-nil "is not null"
+  {:not-nil "is not null"
+   :is-not-nil "is not null"
    :is-nil "is null"})
 
 (defn remap-ident [v]
