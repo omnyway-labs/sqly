@@ -10,12 +10,12 @@ SQLY is yet another EDN based DSL for describing SQL queries. It's limited to ge
   (sql/sql
    {:select   :*
     :from     :zapbuy.cues
-    :where    {:zb-id :is-not-nil
+    :where    {:zb-id      :is-not-nil    ; :is-not-nil & :is-nil are special
                :event-type :is-not-nil}
     :order-by [[:name :asc]
                [:foo.datetime :desc]]
-    :group-by '[:context.event-type
-                (month :datetime)
+    :group-by '[:context.event-type       ; note the quote
+                (month :datetime)         ; allows (month ...) to be unquoted
                 (day :datetime)]})
 #+END_SRC
 
@@ -32,12 +32,12 @@ generates the following SQL:
 ** EXAMPLE 2
 #+BEGIN_SRC clojure
   (sql/sql
-   {:select '{:hour (date-trunc "hour" :datetime)
-              :type :context.event-type
-              :count (count 1)}
-    :from :zapbuy.cues
-    :where {:context.event-type :is-not-nil}
-    :group-by '[:context.event-type
+   {:select   '{:hour  (date-trunc "hour" :datetime) ; note the quote
+                :type  :context.event-type
+                :count (count 1)}
+    :from     :zapbuy.cues
+    :where    {:context.event-type :is-not-nil}
+    :group-by '[:context.event-type       ; note the quote again
                 (date-trunc "hour" :datetime)]
     :order-by [[:hour :desc]]})
 #+END_SRC
