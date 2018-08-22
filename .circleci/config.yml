@@ -1,0 +1,31 @@
+version: 2
+jobs:
+  release:
+    parallelism: 1
+    working_directory: ~/sqly
+    docker:
+      - image: circleci/clojure:latest
+    environment:
+      - VERSION_FILE: ../VERSION
+      - SERVICE_NAME: sqly
+      - GOROOT: ""
+      - GOPATH: "/root/.go"
+      - AWS_PROFILE: staging
+    steps:
+      - checkout
+      - run: git clone https://${READ_BOT_TOKEN}@github.com/omnypay/omnypay-ci.git  ~/omnypay-ci
+      - run: ~/omnypay-ci/install-basic-deps.sh
+      - run: ~/omnypay-ci/install-release-deps.sh
+      - restore_cache:
+          keys:
+            - deps-{{ checksum "deps.edn" }}
+      - run: semver-from-git $VERSION_FILE
+      - run: export SEMVER=$(cat $VERSION_FILE); ~/omnypay-ci/release-lib.sh
+workflows:
+  version: 2
+  build_test_release:
+    jobs:
+      - release:
+          filters:
+            branches:
+              only: master
