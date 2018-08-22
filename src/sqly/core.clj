@@ -76,9 +76,7 @@
 
 (defn emit-order-by-clause [clause content]
   (->> content
-       (map
-        (fn [sub-clause]
-          (emit-idents sub-clause " ")))
+       (map #(emit-idents % " "))
        (str/join ",")
        (str clause " ")))
 
