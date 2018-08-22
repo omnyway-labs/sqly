@@ -4,8 +4,14 @@
    [clojure.string :as str]))
 
 (defn ident-str [s]
-  (if (instance? clojure.lang.Named s)
+  (cond
+    (string? s)
+    (str "'" s "'")
+
+    (instance? clojure.lang.Named s)
     (-> s name ->snake_case)
+
+    :else
     s))
 
 (defn quote-iff [s]
@@ -36,14 +42,15 @@
        (emit-infix-op v opts)
        (let [args-str (->> args
                            (map #(as-ident % opts))
-                           (str/join ", "))]
-         (str fname "(" args-str ")"))))))
+                           (str/join ","))]
+         (str (as-ident fname) "(" args-str ")"))))))
 
 (def ^:dynamic *remapped-idents*
-  {:not-nil "is not null"})
+  {:is-not-nil "is not null"
+   :is-nil "is null"})
 
 (defn remap-ident [v]
-  (get *remapped-idents* v v))
+  (get *remapped-idents* v))
 
 (defn emit-map
   ([m]
@@ -78,14 +85,14 @@
      ((or (-> emitters :coll) emit-coll) v opts)
 
      :else
-     (-> v
-         (remap-ident)
-         (ident-str)
-         (quote-iff)))))
+     (or (remap-ident v)
+         (-> v
+             (ident-str)
+             (quote-iff))))))
 
 (defn emit-idents
   ([idents]
-   (emit-idents idents {:separator ", "}))
+   (emit-idents idents {:separator ","}))
   ([idents {:as opts :keys [separator]}]
    (->> idents
         (map #(as-ident % opts))
@@ -96,7 +103,7 @@
 
 (defn emit-clause
   ([clause content]
-   (emit-clause clause content {:separator ", "}))
+   (emit-clause clause content {:separator ","}))
   ([clause content opts]
    (when content
      (str/join " "
@@ -109,7 +116,7 @@
 (defn emit-order-by-clause [clause content]
   (->> content
        (map #(emit-idents % {:separator " "}))
-       (str/join ", ")
+       (str/join ",")
        (str clause " ")))
 
 (defn emit-where-map
@@ -127,8 +134,8 @@
   (->> [["select" select]
         ["from" from]
         ["where" where #'emit-where-clause]
-        ["order by" order-by #'emit-order-by-clause]
         ["group by" group-by]
+        ["order by" order-by #'emit-order-by-clause]
         ["limit" limit]]
        (map
         (fn [[clause content emitter]]
