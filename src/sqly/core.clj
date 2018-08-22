@@ -14,10 +14,15 @@
     :else
     s))
 
-(defn quote-iff [s]
-  (if (and (string? s) (re-find #"\." s))
-    (pr-str s)
-    s))
+(defn quote-iff
+  ([s]
+   (quote-iff s {}))
+  ([s opts]
+   (if (and (not (:disable-quoting? opts))
+            (string? s)
+            (re-find #"\." s))
+     (pr-str s)
+     s)))
 
 (declare as-ident)
 
@@ -89,7 +94,7 @@
      (or (remap-ident v)
          (-> v
              (ident-str)
-             (quote-iff))))))
+             (quote-iff opts))))))
 
 (defn emit-idents
   ([idents]
@@ -120,6 +125,9 @@
        (str/join ",")
        (str clause " ")))
 
+(defn emit-from-clause [clause content]
+  (emit-clause clause content {:disable-quoting? true}))
+
 (defn emit-where-map
   ([m]
    (emit-where-map m {}))
@@ -133,7 +141,7 @@
 
 (defn emit-select [{:keys [select from where order-by group-by limit]}]
   (->> [["select" select]
-        ["from" from]
+        ["from" from #'emit-from-clause]
         ["where" where #'emit-where-clause]
         ["group by" group-by]
         ["order by" order-by #'emit-order-by-clause]

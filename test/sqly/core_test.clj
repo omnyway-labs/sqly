@@ -22,7 +22,7 @@
 (def select-example
   (canon
    ["select *"
-    " from \"zapbuy.cues\""
+    " from zapbuy.cues"
     " where (zb_id is not null and event_type is not null)"
     " group by \"context.event_type\",month(datetime),day(datetime)"
     " order by name asc,\"foo.datetime\" desc"]))
@@ -58,7 +58,7 @@
            " month(datetime) as month"
            ",\"context.event_type\" as type"
            ",count(1) as count"
-           " FROM \"zapbuy.cues\""
+           " FROM zapbuy.cues"
            " WHERE (\"context.event_type\" IS NOT NULL)"
            " GROUP BY \"context.event_type\",month(datetime)"
            " ORDER BY month DESC"])
@@ -79,7 +79,7 @@
            ",day(datetime) as day"
            ",\"context.event_type\" as type"
            ",count(1) as count"
-           " FROM \"zapbuy.cues\""
+           " FROM zapbuy.cues"
            " WHERE (\"context.event_type\" IS NOT NULL)"
            " GROUP BY \"context.event_type\",month(datetime),day(datetime)"
            " ORDER BY month DESC,day DESC"])
@@ -102,7 +102,7 @@
            " date_trunc('hour',datetime) as hour"
            ",\"context.event_type\" as type"
            ",count(1) as count"
-           " FROM \"zapbuy.cues\""
+           " FROM zapbuy.cues"
            " WHERE (\"context.event_type\" IS NOT NULL)"
            " GROUP BY \"context.event_type\",date_trunc('hour',datetime)"
            " ORDER BY hour DESC"])
