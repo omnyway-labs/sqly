@@ -23,7 +23,7 @@ generates the following SQL:
 
 #+BEGIN_SRC sql
   select *
-  from "zapbuy.cues"
+  from zapbuy.cues
   where (zb_id is not null and event_type is not null)
   group by "context.event_type",month(datetime),day(datetime)
   order by name asc,"foo.datetime" desc
@@ -48,7 +48,7 @@ generates:
   select date_trunc('hour',datetime) as hour,
          "context.event_type" as type,
          count(1) as count
-  from "zapbuy.cues"
+  from zapbuy.cues
   where ("context.event_type" is not null)
   group by "context.event_type",date_trunc('hour',datetime)
   order by hour desc
