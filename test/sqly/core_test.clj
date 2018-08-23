@@ -23,7 +23,7 @@
   (canon
    ["select *"
     " from zapbuy.cues"
-    " where (zb_id is not null and event_type is not null)"
+    " where (zb_id is not null) and (event_type is not null)"
     " group by \"context.event_type\",month(datetime),day(datetime)"
     " order by name asc,\"foo.datetime\" desc"]))
 
@@ -120,9 +120,32 @@
   (is (= (canon
           ["select *"
            " from zapbuy.cues"
-           " where (event_type is not null or error is not null)"])
+           " where (event_type is not null) or (error is not null)"])
          (sql/sql
           '{:select :*
             :from :zapbuy.cues
             :where (or {:event-type :not-nil}
                        {:error :not-nil})}))))
+
+(deftest with-form-test
+  (is (= (canon
+          ["WITH"
+           " load_offer AS select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.load-offer'"
+           ",purchase AS select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.purchase'"
+           " SELECT 1.0"
+           " * ((SELECT \"purchase.count\" FROM purchase)"
+           " / (SELECT \"load_offer.count\" FROM load_offer))"
+           " AS purchases_per_offer_loads"])
+         (sql/sql
+          '{:with {:load-offer (sql
+                                {:select {:count (count 1)}
+                                 :from :zapbuy.cues
+                                 :where (= :cue "zapbuy.load-offer")})
+                   :purchase (sql
+                              {:select {:count (count 1)}
+                               :from :zapbuy.cues
+                               :where (= :cue "zapbuy.purchase")})}
+            :do {:select {:purchases-per-offer-loads
+                          (* 1.0
+                             (/ (sql {:select :purchase.count :from :purchase})
+                                (sql {:select :load-offer.count :from :load-offer})))}}}))))
