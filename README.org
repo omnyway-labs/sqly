@@ -2,20 +2,19 @@
 
 SQLY is yet another EDN based DSL for describing SQL queries. It's limited to generating =SELECT= statements only at this point.
 
-* EXAMPLES
-** EXAMPLE 1
+*EXAMPLE 1*
 #+BEGIN_SRC clojure
   (require '[sqly.core :as sql])
 
   (sql/sql
-   {:select   :*
-    :from     :zapbuy.cues
-    :where    {:zb-id      :is-not-nil    ; :is-not-nil & :is-nil are special
-               :event-type :is-not-nil}
-    :order-by [[:name :asc]
-               [:foo.datetime :desc]]
-    :group-by '[:context.event-type       ; note the quote
-                (month :datetime)         ; allows (month ...) to be unquoted
+   '{:select   :*                         ; note the quote
+     :from     :zapbuy.cues
+     :where    {:zb-id      :is-not-nil   ; :is-not-nil & :is-nil are special
+                :event-type :is-not-nil}
+     :order-by [[:name :asc]
+                [:foo.datetime :desc]]
+     :group-by [:context.event-type
+                (month :datetime)
                 (day :datetime)]})
 #+END_SRC
 
@@ -29,17 +28,17 @@ generates the following SQL:
   order by name asc,"foo.datetime" desc
 #+END_SRC
 
-** EXAMPLE 2
+*EXAMPLE 2*
 #+BEGIN_SRC clojure
   (sql/sql
-   {:select   '{:hour  (date-trunc "hour" :datetime) ; note the quote
+   '{:select   {:hour  (date-trunc "hour" :datetime) ; note the quote
                 :type  :context.event-type
                 :count (count 1)}
-    :from     :zapbuy.cues
-    :where    {:context.event-type :is-not-nil}
-    :group-by '[:context.event-type       ; note the quote again
+     :from     :zapbuy.cues
+     :where    {:context.event-type :is-not-nil}
+     :group-by [:context.event-type
                 (date-trunc "hour" :datetime)]
-    :order-by [[:hour :desc]]})
+     :order-by [[:hour :desc]]})
 #+END_SRC
 
 generates:
@@ -53,3 +52,6 @@ generates:
   group by "context.event_type",date_trunc('hour',datetime)
   order by hour desc
 #+END_SRC
+
+#+CAPTION: sqly
+[[etc/sqly.jpg]]

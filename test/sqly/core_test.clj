@@ -30,24 +30,24 @@
 (deftest sql
   (is (= select-example
          (sql/sql
-          {:select   :*
-           :from     :zapbuy.cues
-           :where    '[(and [:zb-id :is-not-nil]
+          '{:select   :*
+            :from     :zapbuy.cues
+            :where    [(and [:zb-id :is-not-nil]
                             [:event-type :is-not-nil])]
-           :order-by [[:name :asc]
-                      [:foo.datetime :desc]]
-           :group-by '[:context.event-type
+            :order-by [[:name :asc]
+                       [:foo.datetime :desc]]
+            :group-by [:context.event-type
                        (month :datetime)
                        (day :datetime)]})))
   (is (= select-example
          (sql/sql
-          {:select   :*
-           :from     :zapbuy.cues
-           :where    {:zb-id :is-not-nil
-                      :event-type :is-not-nil}
-           :order-by [[:name :asc]
-                      [:foo.datetime :desc]]
-           :group-by '[:context.event-type
+          '{:select   :*
+            :from     :zapbuy.cues
+            :where    {:zb-id :is-not-nil
+                       :event-type :is-not-nil}
+            :order-by [[:name :asc]
+                       [:foo.datetime :desc]]
+            :group-by [:context.event-type
                        (month :datetime)
                        (day :datetime)]}))))
 
@@ -63,14 +63,14 @@
            " GROUP BY \"context.event_type\",month(datetime)"
            " ORDER BY month DESC"])
          (sql/sql
-          {:select '{:month (month :datetime)
+          '{:select {:month (month :datetime)
                      :type :context.event-type
                      :count (count 1)}
-           :from :zapbuy.cues
-           :where {:context.event-type :is-not-nil}
-           :group-by '[:context.event-type
+            :from :zapbuy.cues
+            :where {:context.event-type :is-not-nil}
+            :group-by [:context.event-type
                        (month :datetime)]
-           :order-by [[:month :desc]]})))
+            :order-by [[:month :desc]]})))
 
   ;; :zapbuy-api-count-daily
   (is (= (canon
@@ -84,17 +84,17 @@
            " GROUP BY \"context.event_type\",month(datetime),day(datetime)"
            " ORDER BY month DESC,day DESC"])
          (sql/sql
-          {:select '{:month (month :datetime)
+          '{:select {:month (month :datetime)
                      :day (day :datetime)
                      :type :context.event-type
                      :count (count 1)}
-           :from :zapbuy.cues
-           :where {:context.event-type :is-not-nil}
-           :group-by '[:context.event-type
+            :from :zapbuy.cues
+            :where {:context.event-type :is-not-nil}
+            :group-by [:context.event-type
                        (month :datetime)
                        (day :datetime)]
-           :order-by [[:month :desc]
-                      [:day :desc]]})))
+            :order-by [[:month :desc]
+                       [:day :desc]]})))
 
   ;; :zapbuy-api-count-hourly
   (is (= (canon
@@ -107,14 +107,14 @@
            " GROUP BY \"context.event_type\",date_trunc('hour',datetime)"
            " ORDER BY hour DESC"])
          (sql/sql
-          {:select '{:hour (date-trunc "hour" :datetime)
+          '{:select {:hour (date-trunc "hour" :datetime)
                      :type :context.event-type
                      :count (count 1)}
-           :from :zapbuy.cues
-           :where {:context.event-type :is-not-nil}
-           :group-by '[:context.event-type
+            :from :zapbuy.cues
+            :where {:context.event-type :is-not-nil}
+            :group-by [:context.event-type
                        (date-trunc "hour" :datetime)]
-           :order-by [[:hour :desc]]}))))
+            :order-by [[:hour :desc]]}))))
 
 (deftest where-test
   (is (= (canon
@@ -122,7 +122,7 @@
            " from zapbuy.cues"
            " where (event_type is not null or error is not null)"])
          (sql/sql
-          {:select :*
-           :from :zapbuy.cues
-           :where '(or {:event-type :not-nil}
+          '{:select :*
+            :from :zapbuy.cues
+            :where (or {:event-type :not-nil}
                        {:error :not-nil})}))))
