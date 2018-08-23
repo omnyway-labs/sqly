@@ -26,26 +26,45 @@
 
 (declare as-ident)
 
-(def infix-fns '#{and or = < <= > >= =/= not=})
-
 (defn emit-infix-op
   ([v]
    (emit-infix-op v {}))
   ([[op & args] opts]
-   (let [s (->> args
-                (map #(as-ident % opts))
-                (str/join (str " " op " ")))]
-     (if (< 1 (count args))
-       (str "(" s ")")
-       s))))
+   (->> args
+        (map #(let [s (as-ident % opts)]
+                (if (and (coll? %) (< 1 (count args)))
+                  (str "(" s ")")
+                  s)))
+        (str/join (str " " op " ")))))
+
+(declare sql)
+
+(defn emit-sql [[_sql expr] & _]
+  (sql expr))
+
+(def function-handlers
+  {'and  #'emit-infix-op
+   'or   #'emit-infix-op
+   '+    #'emit-infix-op
+   '-    #'emit-infix-op
+   '*    #'emit-infix-op
+   '/    #'emit-infix-op
+   '=    #'emit-infix-op
+   '<    #'emit-infix-op
+   '<=   #'emit-infix-op
+   '>    #'emit-infix-op
+   '>=   #'emit-infix-op
+   '=/=  #'emit-infix-op
+   'not= #'emit-infix-op
+   'sql  #'emit-sql})
 
 (defn emit-function
   ([v]
    (emit-function v {}))
   ([v opts]
    (let [[fname & args] v]
-     (if (infix-fns fname)
-       (emit-infix-op v opts)
+     (if-let [handler (function-handlers fname)]
+       (handler v opts)
        (let [args-str (->> args
                            (map #(as-ident % opts))
                            (str/join ","))]
@@ -90,6 +109,9 @@
 
      (coll? v)
      ((or (-> emitters :coll) emit-coll) v opts)
+
+     (string? v)
+     (ident-str v)
 
      :else
      (or (remap-ident v)
@@ -137,30 +159,46 @@
    (emit-function (cons 'and (into [] m)) opts)))
 
 (defn emit-where-clause [clause content]
-  (emit-clause clause
-               [content]
-               {:separator " "
-                :emitters {:map emit-where-map}}))
-
-(defn emit-select [{:keys [select from where order-by group-by limit]}]
-  (->> [["select" select]
-        ["from" from #'emit-from-clause]
-        ["where" where #'emit-where-clause]
-        ["group by" group-by]
-        ["order by" order-by #'emit-order-by-clause]
-        ["limit" limit]]
-       (map
-        (fn [[clause content emitter]]
-          ((or emitter emit-clause) clause content)))
-       (remove nil?)
-       (str/join " ")))
+  (when content
+    (emit-clause clause
+                 [content]
+                 {:separator " "
+                  :emitters {:map emit-where-map}})))
 
 (defmulti sql* :op)
 
-(defmethod sql* :select [m]
-  (emit-select (dissoc m :op)))
+(defn emit-select [{:keys [select from where order-by group-by limit]}]
+  (when select
+    (->> [["select" select]
+          ["from" from #'emit-from-clause]
+          ["where" where #'emit-where-clause]
+          ["group by" group-by]
+          ["order by" order-by #'emit-order-by-clause]
+          ["limit" limit]]
+         (map
+          (fn [[clause content emitter]]
+            ((or emitter emit-clause) clause content)))
+         (remove nil?)
+         (str/join " "))))
 
-(def sql-keywords #{:select :insert})
+(defmethod sql* :select [clause]
+  (emit-select clause))
+
+(defmethod sql* :with [{:keys [with do]}]
+  (let [with-clauses (->> with
+                          (map
+                           (fn [[as query]]
+                             (str (as-ident as)
+                                  " as "
+                                  (as-ident query))))
+                          (str/join ","))]
+    (->> ["with"
+          with-clauses
+          (emit-select do)]
+         (remove nil?)
+         (str/join " "))))
+
+(def sql-keywords #{:select :insert :with})
 
 (defn sql [m]
   (when-let [op (some sql-keywords (keys m))]
