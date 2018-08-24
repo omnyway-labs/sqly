@@ -14,16 +14,6 @@
     :else
     s))
 
-(defn quote-iff
-  ([s]
-   (quote-iff s {}))
-  ([s opts]
-   (if (and (not (:disable-quoting? opts))
-            (string? s)
-            (re-find #"\." s))
-     (pr-str s)
-     s)))
-
 (declare as-ident)
 
 (defn emit-infix-op
@@ -42,21 +32,26 @@
 (defn emit-sql [[_sql expr] & _]
   (sql expr))
 
+(defn emit-quoted
+  [[_quoted expr] & _]
+  (str "\"" (ident-str expr) "\""))
+
 (def function-handlers
-  {'and  #'emit-infix-op
-   'or   #'emit-infix-op
-   '+    #'emit-infix-op
-   '-    #'emit-infix-op
-   '*    #'emit-infix-op
-   '/    #'emit-infix-op
-   '=    #'emit-infix-op
-   '<    #'emit-infix-op
-   '<=   #'emit-infix-op
-   '>    #'emit-infix-op
-   '>=   #'emit-infix-op
-   '=/=  #'emit-infix-op
-   'not= #'emit-infix-op
-   'sql  #'emit-sql})
+  {'and    #'emit-infix-op
+   'or     #'emit-infix-op
+   '+      #'emit-infix-op
+   '-      #'emit-infix-op
+   '*      #'emit-infix-op
+   '/      #'emit-infix-op
+   '=      #'emit-infix-op
+   '<      #'emit-infix-op
+   '<=     #'emit-infix-op
+   '>      #'emit-infix-op
+   '>=     #'emit-infix-op
+   '=/=    #'emit-infix-op
+   'not=   #'emit-infix-op
+   'sql    #'emit-sql
+   'quoted #'emit-quoted})
 
 (defn emit-function
   ([v]
@@ -115,9 +110,7 @@
 
      :else
      (or (remap-ident v)
-         (-> v
-             (ident-str)
-             (quote-iff opts))))))
+         (ident-str v)))))
 
 (defn emit-idents
   ([idents]
