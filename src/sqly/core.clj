@@ -150,7 +150,8 @@
          (str clause " "))))
 
 (defn emit-from-clause [clause content]
-  (emit-clause clause content {:disable-quoting? true}))
+  (emit-clause clause content {:disable-quoting? true
+                               :separator ","}))
 
 (defn emit-where-map
   ([m]
