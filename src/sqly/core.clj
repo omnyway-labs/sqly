@@ -189,8 +189,9 @@
                           (map
                            (fn [[as query]]
                              (str (as-ident as)
-                                  " as "
-                                  (as-ident query))))
+                                  " as ("
+                                  (as-ident query)
+                                  ")")))
                           (str/join ","))]
     (->> ["with"
           with-clauses
