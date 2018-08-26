@@ -1,7 +1,14 @@
 (ns sqly.core
   (:require
-   [camel-snake-kebab.core :refer [->kebab-case-keyword ->snake_case]]
-   [clojure.string :as str]))
+   [clojure.string :as str]
+   [camel-snake-kebab.core :refer [->kebab-case-keyword ->snake_case]]))
+
+(defn name-with-ns [k]
+  (->> k
+       (pr-str)
+       (replace {\: ""})
+       (apply str)
+       (->snake_case)))
 
 (defn ident-str [s]
   (cond
@@ -9,7 +16,7 @@
     (str "'" s "'")
 
     (instance? clojure.lang.Named s)
-    (-> s name ->snake_case)
+    (name-with-ns s)
 
     :else
     s))
@@ -21,7 +28,9 @@
    (if (and (not (:disable-quoting? opts))
             (string? s)
             (re-find #"\." s))
-     (pr-str s)
+     (->> (str/split s #"/")
+          (map pr-str)
+          (str/join "."))
      s)))
 
 (declare as-ident)
