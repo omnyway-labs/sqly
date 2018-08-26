@@ -26,10 +26,12 @@
    (quote-iff s {}))
   ([s opts]
    (if (and (not (:disable-quoting? opts))
-            (string? s)
-            (re-find #"\." s))
+            (string? s))
      (->> (str/split s #"/")
-          (map pr-str)
+          (map (fn [s]
+                 (if (re-find #"\." s)
+                   (pr-str s)
+                   s)))
           (str/join "."))
      s)))
 
