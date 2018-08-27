@@ -6,9 +6,8 @@
 
 (deftest as-ident
   (is (= "foo_bar" (sql/as-ident :foo-bar)))
-  (is (= "foo_bar.quux" (sql/as-ident :foo-bar.quux)))
-  (is (= "\"foo_bar.quux\"" (sql/as-ident '(quoted :foo-bar.quux))))
-  (is (= "foo_bar.quux as foo_quux"
+  (is (= "\"foo_bar.quux\"" (sql/as-ident :foo-bar.quux)))
+  (is (= "\"foo_bar.quux\" as foo_quux"
          (sql/as-ident {:foo-quux :foo-bar.quux})))
   (is (= "month(datetime) as month"
          (sql/as-ident {:month '(month :datetime)})))
@@ -36,8 +35,8 @@
             :where    [(and [:zb-id :is-not-nil]
                             [:event-type :is-not-nil])]
             :order-by [[:name :asc]
-                       [(quoted :foo.datetime) :desc]]
-            :group-by [(quoted :context.event-type)
+                       [:foo.datetime :desc]]
+            :group-by [:context.event-type
                        (month :datetime)
                        (day :datetime)]})))
   (is (= select-example
@@ -47,8 +46,8 @@
             :where    {:zb-id :is-not-nil
                        :event-type :is-not-nil}
             :order-by [[:name :asc]
-                       [(quoted :foo.datetime) :desc]]
-            :group-by [(quoted :context.event-type)
+                       [:foo.datetime :desc]]
+            :group-by [:context.event-type
                        (month :datetime)
                        (day :datetime)]}))))
 
@@ -65,11 +64,11 @@
            " ORDER BY month DESC"])
          (sql/sql
           '{:select {:month (month :datetime)
-                     :type (quoted :context.event-type)
+                     :type :context.event-type
                      :count (count 1)}
             :from :zapbuy.cues
-            :where {(quoted :context.event-type) :is-not-nil}
-            :group-by [(quoted :context.event-type)
+            :where {:context.event-type :is-not-nil}
+            :group-by [:context.event-type
                        (month :datetime)]
             :order-by [[:month :desc]]})))
 
@@ -87,11 +86,11 @@
          (sql/sql
           '{:select {:month (month :datetime)
                      :day (day :datetime)
-                     :type (quoted :context.event-type)
+                     :type :context.event-type
                      :count (count 1)}
             :from :zapbuy.cues
-            :where {(quoted :context.event-type) :is-not-nil}
-            :group-by [(quoted :context.event-type)
+            :where {:context.event-type :is-not-nil}
+            :group-by [:context.event-type
                        (month :datetime)
                        (day :datetime)]
             :order-by [[:month :desc]
@@ -109,11 +108,11 @@
            " ORDER BY hour DESC"])
          (sql/sql
           '{:select {:hour (date-trunc "hour" :datetime)
-                     :type (quoted :context.event-type)
+                     :type :context.event-type
                      :count (count 1)}
             :from :zapbuy.cues
-            :where {(quoted :context.event-type) :is-not-nil}
-            :group-by [(quoted :context.event-type)
+            :where {:context.event-type :is-not-nil}
+            :group-by [:context.event-type
                        (date-trunc "hour" :datetime)]
             :order-by [[:hour :desc]]}))))
 
@@ -131,11 +130,11 @@
 (deftest with-form-test
   (is (= (canon
           ["WITH"
-           " load_offer AS (select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.load-offer')"
-           ",purchase AS (select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.purchase')"
+           " load_offer AS select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.load-offer'"
+           ",purchase AS select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.purchase'"
            " SELECT 1.0"
-           " * ((SELECT purchase.count FROM purchase)"
-           " / (SELECT load_offer.count FROM load_offer))"
+           " * ((SELECT \"purchase.count\" FROM purchase)"
+           " / (SELECT \"load_offer.count\" FROM load_offer))"
            " AS purchases_per_offer_loads"])
          (sql/sql
           '{:with {:load-offer (sql
