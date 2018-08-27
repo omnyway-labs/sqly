@@ -134,8 +134,8 @@
 (deftest with-form-test
   (is (= (canon
           ["WITH"
-           " load_offer AS select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.load-offer'"
-           ",purchase AS select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.purchase'"
+           " load_offer AS (select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.load-offer')"
+           ",purchase AS (select count(1) as count from zapbuy.cues WHERE cue = 'zapbuy.purchase')"
            " SELECT 1.0"
            " * ((SELECT \"purchase.count\" FROM purchase)"
            " / (SELECT \"load_offer.count\" FROM load_offer))"
