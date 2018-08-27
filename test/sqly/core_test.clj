@@ -12,7 +12,11 @@
   (is (= "month(datetime) as month"
          (sql/as-ident {:month '(month :datetime)})))
   (is (= "count(1) as cnt"
-         (sql/as-ident {:cnt '(count 1)}))))
+         (sql/as-ident {:cnt '(count 1)})))
+  (is (= "foo.\"foo.col\""
+         (sql/as-ident :foo/foo.col)))
+  (is (= "\"foo.tbl\".\"foo.col\""
+         (sql/as-ident :foo.tbl/foo.col))))
 
 (defn canon [s]
   (->> s
