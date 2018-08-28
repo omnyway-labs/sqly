@@ -161,7 +161,8 @@
          (str clause " "))))
 
 (defn emit-from-clause [clause content]
-  (emit-clause clause content {:disable-quoting? true}))
+  (emit-clause clause content {:disable-quoting? true
+                               :separator ","}))
 
 (defn emit-where-map
   ([m]
@@ -200,8 +201,9 @@
                           (map
                            (fn [[as query]]
                              (str (as-ident as)
-                                  " as "
-                                  (as-ident query))))
+                                  " as ("
+                                  (as-ident query)
+                                  ")")))
                           (str/join ","))]
     (->> ["with"
           with-clauses
