@@ -153,3 +153,18 @@
                           (* 1.0
                              (/ (sql {:select :purchase.count :from :purchase})
                                 (sql {:select :load-offer.count :from :load-offer})))}}}))))
+
+(deftest ops-test
+  (is (= "select * where 1.0 / 5.0"
+         (sql/sql
+          {:select :*
+           :where '(/ 1.0 5.0)})))
+  (is (= "\"context.event\" is null"
+         (sql/emit-postfix-op '(nil? :context.event))))
+  (is (= (canon
+          ["select * where (\"context.event\" is null)"
+           " and (\"context.reason\" is not null)"])
+         (sql/sql
+          {:select :*
+           :where '(and (nil? :context.event)
+                        (not-nil? :context.reason))}))))
