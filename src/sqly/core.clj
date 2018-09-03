@@ -46,35 +46,52 @@
                 (if (and (coll? %) (< 1 (count args)))
                   (str "(" s ")")
                   s)))
-        (str/join (str " " op " ")))))
+        (str/join (str " "
+                       (as-ident op
+                                 (assoc opts :disable-quoting? true))
+                       " ")))))
+
+(defn emit-postfix-op
+  ([v]
+   (emit-postfix-op v {}))
+  ([[op & args] opts]
+   (let [args (->> args
+                   (map #(let [s (as-ident % opts)]
+                           (if (and (coll? %) (< 1 (count args)))
+                             (str "(" s ")")
+                             s)))
+                   (str/join " "))]
+     (str args " " (as-ident op (assoc opts :disable-quoting? true))))))
 
 (declare sql)
 
 (defn emit-sql [[_sql expr] & _]
   (sql expr))
 
-(def function-handlers
-  {'and  #'emit-infix-op
-   'or   #'emit-infix-op
-   '+    #'emit-infix-op
-   '-    #'emit-infix-op
-   '*    #'emit-infix-op
-   '/    #'emit-infix-op
-   '=    #'emit-infix-op
-   '<    #'emit-infix-op
-   '<=   #'emit-infix-op
-   '>    #'emit-infix-op
-   '>=   #'emit-infix-op
-   '=/=  #'emit-infix-op
-   'not= #'emit-infix-op
-   'sql  #'emit-sql})
+(def function-handlers (atom {}))
+
+(defn def-ops [emitter ops]
+  (->> ops
+       (map
+        (fn [op]
+          [op emitter]))
+       (into {})
+       (swap! function-handlers merge)))
+
+(def-ops #'emit-infix-op
+  '[and or + - * / = < <= > >= =/= not= sql])
+
+(def-ops #'emit-postfix-op
+  '[nil? not-nil?])
+
+(def-ops #'emit-sql '[sql])
 
 (defn emit-function
   ([v]
    (emit-function v {}))
   ([v opts]
    (let [[fname & args] v]
-     (if-let [handler (function-handlers fname)]
+     (if-let [handler (@function-handlers fname)]
        (handler v opts)
        (let [args-str (->> args
                            (map #(as-ident % opts))
@@ -82,9 +99,11 @@
          (str (as-ident fname) "(" args-str ")"))))))
 
 (def ^:dynamic *remapped-idents*
-  {:not-nil "is not null"
-   :is-not-nil "is not null"
-   :is-nil "is null"})
+  '{:not-nil "is not null"
+    :is-not-nil "is not null"
+    :is-nil "is null"
+    not-nil? "is not null"
+    nil? "is null"})
 
 (defn remap-ident [v]
   (get *remapped-idents* v))
