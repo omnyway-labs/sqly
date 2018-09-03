@@ -53,5 +53,37 @@ generates:
   order by hour desc
 #+END_SRC
 
+*EXAMPLE 3*
+#+BEGIN_SRC clojure
+  (sql/sql
+   '{:with {:load-offer (sql
+                         {:select {:count (count 1)}
+                          :from :zapbuy.cues
+                          :where (= :cue "zapbuy.load-offer")})
+            :purchase (sql
+                       {:select {:count (count 1)}
+                        :from :zapbuy.cues
+                        :where (= :cue "zapbuy.purchase")})}
+     :do {:select {:purchases-per-offer-loads
+                   (* 1.0
+                      (/ (sql {:select :purchase.count :from :purchase})
+                         (sql {:select :load-offer.count :from :load-offer})))}}})
+#+END_SRC
+
+generates:
+
+#+BEGIN_SRC sql
+  with
+          load_offer as (select count(1) as count
+                         from zapbuy.cues
+                         where cue = 'zapbuy.load-offer'),
+          purchase as (select count(1) as count
+                       from zapbuy.cues
+                       where cue = 'zapbuy.purchase')
+  select 1.0 * ((select "purchase.count" from purchase)
+                / (select "load_offer.count" from load_offer))
+         as purchases_per_offer_loads
+#+END_SRC
+
 #+CAPTION: sqly
 [[etc/sqly.jpg]]
