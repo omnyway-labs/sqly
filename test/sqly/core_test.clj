@@ -167,4 +167,19 @@
          (sql/sql
           {:select :*
            :where '(and (nil? :context.event)
-                        (not-nil? :context.reason))}))))
+                        (not-nil? :context.reason))})))
+  (is (= (canon
+          ["select * from basket"
+           " where (\"context.merchant_id\" = '{{merchant-id}}')"
+           " and (\"context.event_type\" is not null)"
+           " and ((timestamp '2018-09-09') <= datetime)"
+           " and (datetime <= (timestamp '2018-09-10'))"])
+         (sql/sql
+          '{:select :*
+            :from :basket
+            :where (and
+                    (= :context.merchant-id "{{merchant-id}}")
+                    {:context.event-type :is-not-nil}
+                    (<= (timestamp "2018-09-09") :datetime)
+                    (<= :datetime (timestamp "2018-09-10")))}))))
+
