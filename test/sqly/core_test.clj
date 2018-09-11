@@ -181,5 +181,20 @@
                     (= :context.merchant-id "{{merchant-id}}")
                     {:context.event-type :is-not-nil}
                     (<= (timestamp "2018-09-09") :datetime)
-                    (<= :datetime (timestamp "2018-09-10")))}))))
+                    (<= :datetime (timestamp "2018-09-10")))})))
+
+  (is (= (canon
+          ["select * from basket"
+           " where (\"context.merchant_id\" = '{{merchant-id}}')"
+           " and (\"context.event_type\" is not null)"
+           " and (datetime between timestamp '2018-09-09' and timestamp '2018-09-10')"])
+         (sql/sql
+          '{:select :*
+            :from :basket
+            :where (and
+                    (= :context.merchant-id "{{merchant-id}}")
+                    {:context.event-type :is-not-nil}
+                    (between :datetime
+                             (timestamp "2018-09-09")
+                             (timestamp "2018-09-10")))}))))
 
