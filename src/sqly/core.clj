@@ -80,6 +80,17 @@
 (defn emit-sql [[_sql expr] & _]
   (sql expr))
 
+(defn emit-between
+  ([v]
+   (emit-between v {}))
+  ([[op arg lower higher] opts]
+   (str/join " "
+             [(as-ident arg opts)
+              (as-ident op)
+              (as-ident lower opts)
+              "and"
+              (as-ident higher opts)])))
+
 (def function-handlers (atom {}))
 
 (defn def-ops [emitter ops]
@@ -100,6 +111,7 @@
   '[timestamp])
 
 (def-ops #'emit-sql '[sql])
+(def-ops #'emit-between '[between])
 
 (defn emit-function
   ([v]
