@@ -63,6 +63,18 @@
                    (str/join " "))]
      (str args " " (as-ident op (assoc opts :disable-quoting? true))))))
 
+(defn emit-prefix-op
+  ([v]
+   (emit-prefix-op v {}))
+  ([[op & args] opts]
+   (let [args (->> args
+                   (map #(let [s (as-ident % opts)]
+                           (if (and (coll? %) (< 1 (count args)))
+                             (str "(" s ")")
+                             s)))
+                   (str/join " "))]
+     (str (as-ident op (assoc opts :disable-quoting? true)) " " args))))
+
 (declare sql)
 
 (defn emit-sql [[_sql expr] & _]
@@ -83,6 +95,9 @@
 
 (def-ops #'emit-postfix-op
   '[nil? not-nil?])
+
+(def-ops #'emit-prefix-op
+  '[timestamp])
 
 (def-ops #'emit-sql '[sql])
 
