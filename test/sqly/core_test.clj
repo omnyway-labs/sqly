@@ -198,3 +198,11 @@
                              (timestamp "2018-09-09")
                              (timestamp "2018-09-10")))}))))
 
+
+(deftest ident-test
+  (is (= "select * from basket where value.skus[0]['name'] is not null"
+         (sql/sql
+          '{:select :*
+            :from :basket
+            :where (not-nil?
+                    (ident "value.skus[0]['name']"))}))))
