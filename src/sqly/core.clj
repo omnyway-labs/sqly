@@ -91,6 +91,12 @@
               "and"
               (as-ident higher opts)])))
 
+(defn emit-literal-identifier
+  ([v]
+   (emit-literal-identifier v {}))
+  ([[_op v] opts]
+   v))
+
 (def function-handlers (atom {}))
 
 (defn def-ops [emitter ops]
@@ -112,6 +118,7 @@
 
 (def-ops #'emit-sql '[sql])
 (def-ops #'emit-between '[between])
+(def-ops #'emit-literal-identifier '[ident])
 
 (defn emit-function
   ([v]
