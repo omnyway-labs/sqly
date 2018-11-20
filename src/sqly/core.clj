@@ -187,9 +187,10 @@
   ([idents]
    (emit-idents idents {:separator ","}))
   ([idents {:as opts :keys [separator]}]
-   (->> idents
-        (map #(as-ident % opts))
-        (str/join separator))))
+   (when idents
+     (->> idents
+          (map #(as-ident % opts))
+          (str/join separator)))))
 
 (defn ensure-seq [v]
   (if (or (nil? v) (sequential? v)) v [v]))
@@ -264,7 +265,56 @@
          (remove nil?)
          (str/join " "))))
 
-(def sql-keywords #{:select :insert :with})
+(defn emit-columns [columns]
+  (when columns
+    (->> columns
+         (map
+          (fn [[col-name & col-specs]]
+            (str
+             (as-ident col-name)
+             " "
+             (->> col-specs
+                  (map as-ident)
+                  (str/join " ")))))
+         (str/join ","))))
+
+(defn as-seq [s] (if (sequential? s) s [s]))
+
+(def constraint-syntax
+  {:primary-key (fn [cols]
+                  (format "primary key(%s)" (emit-idents (as-seq cols))))
+   :foreign-key (fn [[cols foreign-table foreign-cols]]
+                  (format "foreign key(%s) references %s(%s)"
+                          (emit-idents (as-seq cols))
+                          (as-ident foreign-table)
+                          (emit-idents (as-seq foreign-cols))))})
+
+(defn emit-constraints [constraints]
+  (when constraints
+    (->> constraints
+         (map
+          (fn [[constraint arg]]
+            (when-let [handler (constraint-syntax constraint)]
+              (handler arg))))
+         (str/join ","))))
+
+(emit-constraints {:primary-key :id})
+
+(defmethod sql* :create-table [{:keys [create-table columns constraints]}]
+  (when create-table
+    (str
+     "create table " (as-ident create-table)
+     " ("
+     (emit-columns columns)
+     (when constraints ",")
+     (emit-constraints constraints)
+     ")")))
+
+(defmethod sql* :drop-table [{:keys [drop-table]}]
+  (when drop-table
+    (str "drop table " (as-ident drop-table))))
+
+(def sql-keywords #{:select :insert :with :create-table :drop-table})
 
 (defn sql [m]
   (when-let [op (some sql-keywords (keys m))]
