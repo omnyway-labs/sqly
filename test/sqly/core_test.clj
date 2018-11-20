@@ -206,3 +206,44 @@
             :from :basket
             :where (not-nil?
                     (ident "value.skus[0]['name']"))}))))
+
+(deftest create-table-test
+  (is (= "create table payers (id varchar,payer_id varchar,vault_id varchar)"
+         (sql/sql
+          '{:create-table :payers
+            :columns      {:id       :varchar
+                           :payer-id :varchar
+                           :vault-id :varchar}})))
+
+  (is (= (str
+          "create table payers "
+          "(id varchar"
+          ",payer_id varchar default 'foo'"
+          ",vault_id varchar"
+          ",primary key(id))")
+         (sql/sql
+          '{:create-table :payers
+            :columns      {:id              :varchar
+                           :payer-id [:varchar :default "foo"]
+                           :vault-id        :varchar}
+            :constraints  {:primary-key :id}})))
+
+  (is (= (str
+          "create table payers "
+          "(id varchar"
+          ",payer_id varchar default 'foo'"
+          ",vault_id varchar"
+          ",primary key(id)"
+          ",foreign key(payer_id) references payer(id))")
+         (sql/sql
+          '{:create-table :payers
+            :columns      {:id              :varchar
+                           :payer-id [:varchar :default "foo"]
+                           :vault-id        :varchar}
+            :constraints  {:primary-key :id
+                           :foreign-key [:payer-id :payer :id]}}))))
+
+(deftest drop-table-test
+  (= "drop table payers"
+     (sql/sql
+      '{:drop-table :payers})))
