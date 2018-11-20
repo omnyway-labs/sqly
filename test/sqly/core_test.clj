@@ -234,14 +234,14 @@
           ",payer_id varchar default 'foo'"
           ",vault_id varchar"
           ",primary key(id)"
-          ",foreign key(payer_id) references payer(id))")
+          ",constraint fk_payer_address_id foreign key(payer_id) references payer(id))")
          (sql/sql
           '{:create-table :payers
             :columns      {:id              :varchar
                            :payer-id [:varchar :default "foo"]
                            :vault-id        :varchar}
             :constraints  {:primary-key :id
-                           :foreign-key [:payer-id :payer :id]}}))))
+                           :foreign-key [:fk-payer-address-id :payer-id :payer :id]}}))))
 
 (deftest drop-table-test
   (= "drop table payers"

@@ -283,8 +283,9 @@
 (def constraint-syntax
   {:primary-key (fn [cols]
                   (format "primary key(%s)" (emit-idents (as-seq cols))))
-   :foreign-key (fn [[cols foreign-table foreign-cols]]
-                  (format "foreign key(%s) references %s(%s)"
+   :foreign-key (fn [[constraint-name cols foreign-table foreign-cols]]
+                  (format "constraint %s foreign key(%s) references %s(%s)"
+                          (as-ident constraint-name)
                           (emit-idents (as-seq cols))
                           (as-ident foreign-table)
                           (emit-idents (as-seq foreign-cols))))})
