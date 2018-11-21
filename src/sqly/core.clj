@@ -1,14 +1,20 @@
 (ns sqly.core
   (:require
    [clojure.string :as str]
-   [camel-snake-kebab.core :refer [->kebab-case-keyword ->snake_case]]))
+   [camel-snake-kebab.core :refer [->snake_case]]))
+
+(def ^:dynamic *output-ident-style* ->snake_case)
+
+(defmacro with-output-ident-style [f & body]
+  `(binding [*output-ident-style* ~f]
+     ~@body))
 
 (defn name-with-ns [k]
   (->> k
        (pr-str)
        (replace {\: ""})
        (apply str)
-       (->snake_case)))
+       (*output-ident-style*)))
 
 (defn ident-str [s]
   (cond

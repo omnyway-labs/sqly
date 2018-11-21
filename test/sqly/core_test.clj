@@ -2,6 +2,7 @@
   (:require
    [clojure.test :refer :all]
    [clojure.string :as str]
+   [camel-snake-kebab.core :as csk]
    [sqly.core :as sql]))
 
 (deftest as-ident
@@ -129,7 +130,25 @@
           '{:select :*
             :from :zapbuy.cues
             :where (or {:event-type :not-nil}
-                       {:error :not-nil})}))))
+                       {:error :not-nil})}))))=
+
+(defn mixed-case? [s]
+  (some? (re-find #"[A-Z]" s)))
+
+(deftest ident-style-test
+  (is (= (str/join
+          ""
+          ["select *"
+           " from zapbuy.cues"
+           " where (\"eventType\" is not null) or (error is not null)"])
+         (sql/with-output-ident-style #(if (mixed-case? %)
+                                         (str \" (csk/->camelCase %) \")
+                                         %)
+           (sql/sql
+            '{:select :*
+              :from :zapbuy.cues
+              :where (or {:eventType :not-nil}
+                         {:error :not-nil})})))))
 
 (deftest with-form-test
   (is (= (canon
@@ -244,6 +263,6 @@
                            :foreign-key [:fk-payer-address-id :payer-id :payer :id]}}))))
 
 (deftest drop-table-test
-  (= "drop table payers"
-     (sql/sql
-      '{:drop-table :payers})))
+  (is (= "drop table payers"
+         (sql/sql
+          '{:drop-table :payers}))))
