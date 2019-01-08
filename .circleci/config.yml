@@ -19,6 +19,7 @@ jobs:
       - restore_cache:
           keys:
             - deps-{{ checksum "deps.edn" }}
+      - run: git fetch --unshallow
       - run: semver-from-git $VERSION_FILE
       - run: export SEMVER=$(cat $VERSION_FILE); ~/omnypay-ci/release-lib.sh
 workflows:
