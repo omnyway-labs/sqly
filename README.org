@@ -1,0 +1,89 @@
+#+TITLE: SQLY - a minimal EDN DSL for SQL generation
+
+SQLY is yet another EDN based DSL for describing SQL queries. It's limited to generating =SELECT= statements only at this point.
+
+*EXAMPLE 1*
+#+BEGIN_SRC clojure
+  (require '[sqly.core :as sql])
+
+  (sql/sql
+   '{:select   :*                         ; note the quote
+     :from     :myapp.cues
+     :where    {:zb-id      :is-not-nil   ; :is-not-nil & :is-nil are special
+                :event-type :is-not-nil}
+     :order-by [[:name :asc]
+                [:foo.datetime :desc]]
+     :group-by [:context.event-type
+                (month :datetime)
+                (day :datetime)]})
+#+END_SRC
+
+generates the following SQL:
+
+#+BEGIN_SRC sql
+  select *
+  from myapp.cues
+  where (zb_id is not null and event_type is not null)
+  group by "context.event_type",month(datetime),day(datetime)
+  order by name asc,"foo.datetime" desc
+#+END_SRC
+
+*EXAMPLE 2*
+#+BEGIN_SRC clojure
+  (sql/sql
+   '{:select   {:hour  (date-trunc "hour" :datetime) ; note the quote
+                :type  :context.event-type
+                :count (count 1)}
+     :from     :myapp.cues
+     :where    {:context.event-type :is-not-nil}
+     :group-by [:context.event-type
+                (date-trunc "hour" :datetime)]
+     :order-by [[:hour :desc]]})
+#+END_SRC
+
+generates:
+
+#+BEGIN_SRC sql
+  select date_trunc('hour',datetime) as hour,
+         "context.event_type" as type,
+         count(1) as count
+  from myapp.cues
+  where "context.event_type" is not null
+  group by "context.event_type",date_trunc('hour',datetime)
+  order by hour desc
+#+END_SRC
+
+*EXAMPLE 3*
+#+BEGIN_SRC clojure
+  (sql/sql
+   '{:with {:get-offer (sql
+                        {:select {:count (count 1)}
+                         :from :myapp.cues
+                         :where (= :cue "myapp.get-offer")})
+            :purchase (sql
+                       {:select {:count (count 1)}
+                        :from :myapp.cues
+                        :where (= :cue "myapp.purchase")})}
+     :do {:select {:purchases-per-offer-loads
+                   (* 1.0
+                      (/ (sql {:select :purchase.count :from :purchase})
+                         (sql {:select :get-offer.count :from :get-offer})))}}})
+#+END_SRC
+
+generates:
+
+#+BEGIN_SRC sql
+  with
+          get_offer as (select count(1) as count
+                        from myapp.cues
+                        where cue = 'myapp.get-offer'),
+          purchase as (select count(1) as count
+                       from myapp.cues
+                       where cue = 'myapp.purchase')
+  select 1.0 * ((select "purchase.count" from purchase)
+                / (select "get_offer.count" from get_offer))
+         as purchases_per_offer_loads
+#+END_SRC
+
+#+CAPTION: sqly
+[[etc/sqly.jpg]]
