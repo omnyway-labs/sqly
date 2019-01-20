@@ -14,13 +14,13 @@ jobs:
     parallelism: 1
     working_directory: ~/sqly
     docker:
-      - image: omnyway/clojure-cli:latest
+      - image: omnyway/clojure-cli:0.1.3
     environment:
       - VERSION_FILE: ../VERSION
       - SERVICE_NAME: sqly
     steps:
       - checkout
-      - run: clojure -Avulcan next-tag > $VERSION_FILE
+      - run: vulcan next-tag > $VERSION_FILE
       - run: export SEMVER=$(cat $VERSION_FILE); github-release release --user omnyway-labs --repo sqly --tag $SEMVER  --target $CIRCLE_SHA1
 workflows:
   version: 2
