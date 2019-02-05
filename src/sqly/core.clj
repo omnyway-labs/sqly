@@ -305,8 +305,6 @@
               (handler arg))))
          (str/join ","))))
 
-(emit-constraints {:primary-key :id})
-
 (defmethod sql* :create-table [{:keys [create-table columns constraints]}]
   (when create-table
     (str
