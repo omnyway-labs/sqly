@@ -237,8 +237,6 @@
                  {:separator " "
                   :emitters {:map emit-where-map}})))
 
-(defmulti sql* :op)
-
 (defn emit-select [{:keys [select from where order-by group-by limit]}]
   (when select
     (->> [["select" select]
@@ -253,10 +251,22 @@
          (remove nil?)
          (str/join " "))))
 
-(defmethod sql* :select [clause]
+(def sql-ops (atom #{}))
+
+(defn find-the-op [m]
+  (some @sql-ops (keys m)))
+
+(defmulti sql* :op)
+
+(defmacro def-sql-op [op args & body]
+  `(let [op-kw# (keyword '~op)]
+     (defmethod sql* op-kw# ~args ~@body)
+     (swap! sql-ops conj op-kw#)))
+
+(def-sql-op select [clause]
   (emit-select clause))
 
-(defmethod sql* :with [{:keys [with do]}]
+(def-sql-op with [{:keys [with do]}]
   (let [with-clauses (->> with
                           (map
                            (fn [[as query]]
@@ -305,9 +315,7 @@
               (handler arg))))
          (str/join ","))))
 
-(emit-constraints {:primary-key :id})
-
-(defmethod sql* :create-table [{:keys [create-table columns constraints]}]
+(def-sql-op create-table [{:keys [create-table columns constraints]}]
   (when create-table
     (str
      "create table " (as-ident create-table)
@@ -317,12 +325,10 @@
      (emit-constraints constraints)
      ")")))
 
-(defmethod sql* :drop-table [{:keys [drop-table]}]
+(def-sql-op drop-table [{:keys [drop-table]}]
   (when drop-table
     (str "drop table " (as-ident drop-table))))
 
-(def sql-keywords #{:select :insert :with :create-table :drop-table})
-
 (defn sql [m]
-  (when-let [op (some sql-keywords (keys m))]
+  (when-let [op (find-the-op m)]
     (sql* (assoc m :op op))))
