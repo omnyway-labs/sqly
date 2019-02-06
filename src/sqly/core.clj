@@ -228,7 +228,16 @@
   ([m]
    (emit-where-map m {}))
   ([m opts]
-   (emit-function (cons 'and (into [] m)) opts)))
+   (let [expr (->> (into [] m)
+                   (map
+                    (fn [[k v]]
+                      (if ((set (keys *remapped-idents*)) v)
+                        [k v]
+                        (list '= k v)))))
+         expr (if (< (count expr) 1)
+                (list* 'and expr)
+                (cons 'and expr))]
+     (emit-function expr opts))))
 
 (defn emit-where-clause [clause content]
   (when content
@@ -237,14 +246,35 @@
                  {:separator " "
                   :emitters {:map emit-where-map}})))
 
-(defn emit-select [{:keys [select from where order-by group-by limit]}]
+(defn emit-join-clause [clause content]
+  (when (not-empty content)
+    (->> content
+         (map
+          (fn [{:keys [type from on]}]
+            (str/join " "
+                      [(cond
+                         (#{:left :right :full} type)
+                         (str (name type) " join")
+                         :else  "join")
+                       (emit-idents (ensure-seq from))
+                       (emit-where-clause "on" on)])))
+         (str/join " "))))
+
+(defn emit-select [{:keys [select
+                           from
+                           where
+                           order-by
+                           group-by
+                           limit
+                           join]}]
   (when select
     (->> [["select" select]
           ["from" from #'emit-from-clause]
           ["where" where #'emit-where-clause]
           ["group by" group-by]
           ["order by" order-by #'emit-order-by-clause]
-          ["limit" limit]]
+          ["limit" limit]
+          ["join" join #'emit-join-clause]]
          (map
           (fn [[clause content emitter]]
             ((or emitter emit-clause) clause content)))

@@ -85,6 +85,33 @@ generates:
          as purchases_per_offer_loads
 #+END_SRC
 
+*EXAMPLE 4*
+#+BEGIN_SRC clojure
+  (sql/sql
+   '{:select [{:abc.time (date-format :abc-clnt/datetime "%Y-%m-%d %T")}
+              {:abc.value-email :abc/value.profile.email}]
+     :from   {:abc :abc-prod/abc-table1}
+     :join   [{:type :left
+               :from {:abc-clnt :abc-prod/abc-clnt}
+               :on   {:abc-clnt/abc-id :abc/value.abc-id}}
+              {:type :left
+               :from {:abc-pmnts :abc-prod/abc-pmnts}
+               :on   {:abc-pmnts/basket-id :abc-clnt/abc-id}}]
+     :where  {:abc-clnt/event-name "btn-clicked"}})
+#+END_SRC
+
+generates:
+
+#+BEGIN_SRC sql
+  select
+         date_format(abc_clnt.datetime,'%Y-%m-%d %T') as "abc.time",
+         abc."value.profile.email" as "abc.value_email"
+  from abc_prod.abc_table_1 as abc
+  where abc_clnt.event_name = 'btn-clicked'
+  left join abc_prod.abc_clnt as abc_clnt on abc_clnt.abc_id = abc."value.abc_id"
+  left join abc_prod.abc_pmnts as abc_pmnts on abc_pmnts.basket_id = abc_clnt.abc_id
+#+END_SRC
+
 #+CAPTION: sqly
 [[etc/sqly.jpg]]
 

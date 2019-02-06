@@ -266,3 +266,89 @@
   (is (= "drop table payers"
          (sql/sql
           '{:drop-table :payers}))))
+
+(deftest where-clause-map
+  (is (= (canon
+          ["select * from basket"
+           " where (\"context.merchant_id\" = '{{merchant-id}}')"
+           " and (\"context.event_type\" is not null)"
+           " and (\"context.count\" = 1)"])
+         (sql/sql
+          '{:select :*
+            :from :basket
+            :where {:context.merchant-id "{{merchant-id}}"
+                    :context.event-type :is-not-nil
+                    :context.count 1}}))))
+
+(deftest join-test
+  (is
+   (=
+    (canon
+     ["SELECT"
+      " DATE_FORMAT(abc_clnt.datetime,'%Y-%m-%d %T')"
+      " AS \"abc_clnt.datetime_time\""
+      ",abc_cues.\"context.request_id\""
+      " AS \"abc_cues.context_request_id\""
+      ",abc_clnt.abc_id AS \"abc_clnt.abc_id\""
+      ",abc_pmnts.error AS \"abc_pmnts.error\""
+      ",abc_clnt.prd_sku AS \"abc_clnt.prd_sku\""
+      ",abc_clnt.product_id AS \"abc_clnt.product_id\""
+      ",abc_clnt.prd_price AS \"abc_clnt.prd_price\""
+      ",abc_clnt.prd_sale_price AS \"abc_clnt.prd_sale_price\""
+      ",abc_clnt.prd_sale_desc AS \"abc_clnt.prd_sale_desc\""
+      ",abc_pmnts.total / 100 AS \"abc_pmnts.total\""
+      ",abc_clnt.device_model AS \"abc_clnt.device_model\""
+      ",abc_cues.\"value.rcpt.id\""
+      " AS \"abc_cues.value_rcpt_id\""
+      ",abc_cues.\"value.rcpt.rcpt.id\""
+      " AS \"abc_cues.value_rcpt_rcpt_id\""
+      ",abc_cues.\"value.rcpt.rcpt.txn_info.merch_txn_id\""
+      " AS \"zc.valuercptrcpt_txn_info_merch_txn_id\""
+      ",abc_cues.\"value.shopper.profile.billing_address.state\""
+      " AS \"abc_cues.value_shopper_profile_billing_address_state\""
+      ",abc_cues.\"value.shopper.profile.email\""
+      " AS \"abc_cues.value_shopper_profile_email\""
+      " FROM abc_prod.abc_cues AS abc_cues"
+      " WHERE abc_clnt.event_name = 'btn-clicked'"
+      " LEFT JOIN abc_prod.abc_clnt"
+      " AS abc_clnt"
+      " ON abc_clnt.abc_id = abc_cues.\"value.abc_id\""
+      " LEFT JOIN abc_prod.abc_pmnts"
+      " AS abc_pmnts"
+      " ON abc_pmnts.basket_id = abc_clnt.abc_id"])
+    (->
+     '{:select [{:abc-clnt.datetime-time
+                 (date-format :abc-clnt/datetime "%Y-%m-%d %T")}
+                {:abc-cues.context-request-id
+                 :abc-cues/context.request-id}
+                {:abc-clnt.abc-id :abc-clnt/abc-id}
+                {:abc-pmnts.error :abc-pmnts/error}
+                {:abc-clnt.prd-sku :abc-clnt/prd-sku}
+                {:abc-clnt.product-id :abc-clnt/product-id}
+                {:abc-clnt.prd-price :abc-clnt/prd-price}
+                {:abc-clnt.prd-sale-price
+                 :abc-clnt/prd-sale-price}
+                {:abc-clnt.prd-sale-desc
+                 :abc-clnt/prd-sale-desc}
+                {:abc_pmnts.total (/ :abc-pmnts/total 100)}
+                {:abc-clnt.device-model :abc-clnt/device-model}
+                {:abc-cues.value-rcpt-id
+                 :abc-cues/value.rcpt.id}
+                {:abc-cues.value-rcpt-rcpt-id
+                 :abc-cues/value.rcpt.rcpt.id}
+                {:zc.valuercptrcpt-txn-info-merch-txn-id
+                 :abc-cues/value.rcpt.rcpt.txn-info.merch-txn-id}
+                {:abc-cues.value-shopper-profile-billing-address-state
+                 :abc-cues/value.shopper.profile.billing-address.state}
+                {:abc-cues.value-shopper-profile-email
+                 :abc-cues/value.shopper.profile.email}]
+       :from   {:abc-cues :abc-prod/abc-cues}
+       :join   [{:type :left
+                 :from {:abc-clnt :abc-prod/abc-clnt}
+                 :on   {:abc-clnt/abc-id :abc-cues/value.abc-id}}
+                {:type :left
+                 :from {:abc-pmnts :abc-prod/abc-pmnts}
+                 :on   {:abc-pmnts/basket-id :abc-clnt/abc-id}}]
+       :where  {:abc-clnt/event-name "btn-clicked"}}
+     sql/sql
+     canon))))
