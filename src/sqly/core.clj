@@ -228,7 +228,16 @@
   ([m]
    (emit-where-map m {}))
   ([m opts]
-   (emit-function (cons 'and (into [] m)) opts)))
+   (let [expr (->> (into [] m)
+                   (map
+                    (fn [[k v]]
+                      (if ((set (keys *remapped-idents*)) v)
+                        [k v]
+                        (list '= k v)))))
+         expr (if (< (count expr) 1)
+                (list* 'and expr)
+                (cons 'and expr))]
+     (emit-function expr opts))))
 
 (defn emit-where-clause [clause content]
   (when content

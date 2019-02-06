@@ -266,3 +266,16 @@
   (is (= "drop table payers"
          (sql/sql
           '{:drop-table :payers}))))
+
+(deftest where-clause-map
+  (is (= (canon
+          ["select * from basket"
+           " where (\"context.merchant_id\" = '{{merchant-id}}')"
+           " and (\"context.event_type\" is not null)"
+           " and (\"context.count\" = 1)"])
+         (sql/sql
+          '{:select :*
+            :from :basket
+            :where {:context.merchant-id "{{merchant-id}}"
+                    :context.event-type :is-not-nil
+                    :context.count 1}}))))
