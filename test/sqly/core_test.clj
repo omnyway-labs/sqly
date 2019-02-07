@@ -352,3 +352,7 @@
        :where  {:abc-clnt/event-name "btn-clicked"}}
      sql/sql
      canon))))
+
+(deftest canonicalize-alpha-numeric-idents
+  (is (= "a_v3" (sql/ident-str :a-v3)))
+  (is (= "foo/a_v3" (sql/ident-str :foo/a-v3))))
