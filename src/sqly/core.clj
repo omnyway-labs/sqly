@@ -3,7 +3,8 @@
    [clojure.string :as str]
    [camel-snake-kebab.core :refer [->snake_case]]))
 
-(def ^:dynamic *output-ident-style* ->snake_case)
+(def ^:dynamic *output-ident-style*
+  #(->snake_case %1 :separator "-"))
 
 (defmacro with-output-ident-style [f & body]
   `(binding [*output-ident-style* ~f]
