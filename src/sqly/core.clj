@@ -312,6 +312,11 @@
          (remove nil?)
          (str/join " "))))
 
+(def-sql-op union [{:keys [union]}]
+  (->> union
+       (map emit-select)
+       (str/join " union ")))
+
 (defn emit-columns [columns]
   (when columns
     (->> columns

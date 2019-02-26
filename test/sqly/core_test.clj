@@ -356,3 +356,18 @@
 (deftest canonicalize-alpha-numeric-idents
   (is (= "a_v3" (sql/ident-str :a-v3)))
   (is (= "foo/a_v3" (sql/ident-str :foo/a-v3))))
+
+(deftest union-test
+  (is (= (canon
+          ["select related_id,type,description from a_events"
+           " where related_id = '{{related-id}}'"
+           " union "
+           "select related_id,type,description from b_events"
+           " where related_id = '{{related-id}}'"])
+         (sql/sql
+          '{:union [{:select [:related_id :type :description]
+                     :from :a_events
+                     :where {:related_id "{{related-id}}"}}
+                    {:select [:related_id :type :description]
+                     :from :b_events
+                     :where {:related_id "{{related-id}}"}}]}))))
