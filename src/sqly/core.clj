@@ -4,7 +4,10 @@
    [camel-snake-kebab.core :refer [->snake_case]]))
 
 (def ^:dynamic *output-ident-style*
-  #(->snake_case %1 :separator "-"))
+  #(try
+     (->snake_case %1 :separator "-")
+     (catch Exception _
+       %1)))
 
 (defmacro with-output-ident-style [f & body]
   `(binding [*output-ident-style* ~f]
