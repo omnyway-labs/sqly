@@ -371,3 +371,22 @@
                     {:select [:related_id :type :description]
                      :from :b_events
                      :where {:related_id "{{related-id}}"}}]}))))
+
+(deftest select-distinct-test
+  (is (= (canon
+          ["select distinct id1,id2,id3 from a_events"])
+         (sql/sql
+          '{:select [:id1 :id2 :id3]
+            :distinct? true
+            :from :a_events}))))
+
+(deftest where-in-test
+  (is (= (canon
+          ["select id,name from a_events"
+           " where (id in ('foo','bar'))"
+           " and (name = 'baz')"])
+         (sql/sql
+          '{:select [:id :name]
+            :from :a_events
+            :where {:id ["foo" "bar"]
+                    :name "baz"}}))))

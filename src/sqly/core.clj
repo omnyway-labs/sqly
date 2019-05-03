@@ -4,7 +4,10 @@
    [camel-snake-kebab.core :refer [->snake_case]]))
 
 (def ^:dynamic *output-ident-style*
-  #(->snake_case %1 :separator "-"))
+  #(try
+     (->snake_case %1 :separator "-")
+     (catch Exception _
+       %1)))
 
 (defmacro with-output-ident-style [f & body]
   `(binding [*output-ident-style* ~f]
@@ -98,6 +101,12 @@
               "and"
               (as-ident higher opts)])))
 
+(defn emit-in
+  ([v]
+   (emit-in v {}))
+  ([v opts]
+   (emit-infix-op v (assoc opts :separator ","))))
+
 (defn emit-literal-identifier
   ([v]
    (emit-literal-identifier v {}))
@@ -126,6 +135,7 @@
 (def-ops #'emit-sql '[sql])
 (def-ops #'emit-between '[between])
 (def-ops #'emit-literal-identifier '[ident])
+(def-ops #'emit-in '[in])
 
 (defn emit-function
   ([v]
@@ -234,7 +244,9 @@
                     (fn [[k v]]
                       (if ((set (keys *remapped-idents*)) v)
                         [k v]
-                        (list '= k v)))))
+                        (if (coll? v)
+                          (list 'in k v)
+                          (list '= k v))))))
          expr (if (< (count expr) 1)
                 (list* 'and expr)
                 (cons 'and expr))]
@@ -262,6 +274,7 @@
          (str/join " "))))
 
 (defn emit-select [{:keys [select
+                           distinct?
                            from
                            where
                            order-by
@@ -269,7 +282,7 @@
                            limit
                            join]}]
   (when select
-    (->> [["select" select]
+    (->> [[(str "select" (when distinct? " distinct")) select]
           ["from" from #'emit-from-clause]
           ["where" where #'emit-where-clause]
           ["group by" group-by]
