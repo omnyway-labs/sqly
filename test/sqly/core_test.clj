@@ -161,9 +161,9 @@
            " AS purchases_per_offer_loads"])
          (sql/sql
           '{:with {:get-offer (sql
-                                {:select {:count (count 1)}
-                                 :from :myapp.cues
-                                 :where (= :cue "myapp.get-offer")})
+                               {:select {:count (count 1)}
+                                :from :myapp.cues
+                                :where (= :cue "myapp.get-offer")})
                    :purchase (sql
                               {:select {:count (count 1)}
                                :from :myapp.cues
@@ -390,3 +390,27 @@
             :from :a_events
             :where {:id ["foo" "bar"]
                     :name "baz"}}))))
+
+
+(deftest select-join-test
+  (is (= (canon
+          ["select b1.id1 as id1 from a_events as b1"
+           " inner join (select distinct id1 as id1,id2 as id2,max(id3) as id3"
+           " from a_events group by id1,id2) as b2"
+           " on (b1.id1 = b2.id1)"
+           " and (b1.id2 = b2.id2)"
+           " and (b1.id3 = b2.id3)"])
+         (sql/sql
+          '{:select {:id1 :b1/id1}
+            :from {:b1 :a_events}
+            :join [{:type :inner
+                    :select {:id1 :id1
+                             :id2 :id2
+                             :id3 (max :id3)}
+                    :distinct? true
+                    :from :a_events
+                    :group-by [:id1 :id2]
+                    :on {:b1/id1 :b2/id1
+                         :b1/id2 :b2/id2
+                         :b1/id3 :b2/id3}
+                    :as :b2}]}))))

@@ -259,17 +259,24 @@
                  {:separator " "
                   :emitters {:map emit-where-map}})))
 
+(declare emit-select)
+
 (defn emit-join-clause [clause content]
   (when (not-empty content)
     (->> content
          (map
-          (fn [{:keys [type from on]}]
+          (fn [{:keys [type from on select as] :as join}]
             (str/join " "
                       [(cond
-                         (#{:left :right :full} type)
+                         (#{:left :right :full :inner} type)
                          (str (name type) " join")
                          :else  "join")
-                       (emit-idents (ensure-seq from))
+                       (if select
+                         (let [s (emit-select (select-keys join [:select :distinct? :from :group-by :order-by :limit]))]
+                           (str "(" s ")"
+                                (when as
+                                  (str " as " (name as)))))
+                         (emit-idents (ensure-seq from)))
                        (emit-where-clause "on" on)])))
          (str/join " "))))
 
